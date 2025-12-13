@@ -1,0 +1,2 @@
+NAZVA:Lviv-Kyiv Express
+PASAZHYRSKY;1;4;56;VIP;45;8

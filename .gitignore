@@ -1,0 +1,74 @@
+# .gitignore для лабораторної роботи 6 — Java / Maven / IntelliJ
+
+# Maven
+/target/
+/release.properties
+/dependency-reduced-pom.xml
+/pom.xml.tag
+/pom.xml.releaseBackup
+/pom.xml.versionsBackup
+
+# Logs
+/logs/
+*.log
+*.log.*
+
+# IntelliJ IDEA
+/.idea/
+*.iml
+*.iws
+*.ipr
+/out/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*~
+*.tmp
+*.swp
+
+# Compiled classes
+*.class
+
+# Packages
+*.jar
+*.war
+*.ear
+
+# Maven wrapper
+.mvn/
+
+# VS Code
+.vscode/
+
+# Environment files
+.env
+.env.local
+
+# Misc
+coverage-reports/
+*.log
+
+# Ignore build/release artifacts
+dist/
+build/
+
+# Personal configs
+.idea/
+*.iml
+/.idea/workspace.xml
+
+# Ensure the source and resource files remain tracked
+!src/**
+!pom.xml
+
+# End of .gitignore
+
