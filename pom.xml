@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+           https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>railway-management</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <name>Railway Management System</name>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+
+        <junit.jupiter.version>5.10.0</junit.jupiter.version>
+        <mockito.version>5.11.0</mockito.version>
+        <bytebuddy.version>1.14.12</bytebuddy.version>
+        <jacoco.version>0.8.10</jacoco.version>
+        <log4j2.version>2.20.0</log4j2.version>
+
+        <!-- Control mail sending from Maven/CI: default false, enable via profile -Penable-mail -->
+        <mail.enabled>false</mail.enabled>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Ensure Byte Buddy is available on test classpath (compatible with Mockito used here) -->
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+            <version>${bytebuddy.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy-agent</artifactId>
+            <version>${bytebuddy.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Log4j2 -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+        <!-- SLF4J binding (optional, useful if other libs use SLF4J) -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+
+        <!-- JavaMail (для SMTP appender) -->
+        <dependency>
+            <groupId>com.sun.mail</groupId>
+            <artifactId>jakarta.mail</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+        <!-- Compatibility: provide legacy javax.mail API expected by some Log4j2 builds -->
+        <dependency>
+            <groupId>javax.mail</groupId>
+            <artifactId>javax.mail-api</artifactId>
+            <version>1.6.2</version>
+        </dependency>
+        <!-- Compatibility: provide legacy javax.activation for Log4j2 SMTPAppender runtime (javax.activation.DataSource) -->
+        <dependency>
+            <groupId>javax.activation</groupId>
+            <artifactId>activation</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Compiler plugin with explicit encoding -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+
+            <!-- Ensure resources are read with UTF-8 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <configuration>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+
+            <!-- Surefire plugin for running tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.1.2</version>
+                <configuration>
+                    <useModulePath>false</useModulePath>
+                    <!-- Include JaCoCo's argLine (set by prepare-agent) and preserve Byte Buddy flag -->
+                    <argLine>${argLine} -Dnet.bytebuddy.experimental=true</argLine>
+                    <!-- Pass mail-related system properties to test JVM. Values are read from environment when available -->
+                    <systemPropertyVariables>
+                        <mail.user>${env.MAIL_USER}</mail.user>
+                        <mail.pass>${env.MAIL_PASS}</mail.pass>
+                        <!-- controlled by project property, can be enabled with -Penable-mail -->
+                        <mail.enabled>${mail.enabled}</mail.enabled>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+
+            <!-- JaCoCo plugin (добавлен в build.plugins чтобы mvn jacoco:report работал) -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <!-- Attach the agent before tests -->
+                    <execution>
+                        <id>prepare-agent</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                        <configuration>
+                            <destFile>${project.build.directory}/jacoco.exec</destFile>
+                        </configuration>
+                    </execution>
+                    <!-- Generate report after tests (in verify) -->
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <configuration>
+                            <dataFile>${project.build.directory}/jacoco.exec</dataFile>
+                            <outputDirectory>${project.reporting.outputDirectory}/jacoco</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <!-- Add a check goal to enforce coverage thresholds -->
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <dataFile>${project.build.directory}/jacoco.exec</dataFile>
+                            <rules>
+                                <!-- Enforce 90% line coverage for the whole bundle -->
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.90</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                                <!-- Keep package-level soft checks for model and utils (helpful guidance) -->
+                                <rule>
+                                    <element>PACKAGE</element>
+                                    <includes>
+                                        <include>model.*</include>
+                                    </includes>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.90</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                                <rule>
+                                    <element>PACKAGE</element>
+                                    <includes>
+                                        <include>utils.*</include>
+                                    </includes>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.90</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
+    <!-- Optional profile to prepare the project for building/running tests on JDK 25.
+         Activate with: mvn -P jdk25 test
+         The profile sets compiler source/target to 25 and ensures Surefire passes the
+         experimental Byte Buddy flag; it is intentionally not active by default so
+         existing CI and local builds remain stable.
+    -->
+    <profiles>
+        <profile>
+            <id>jdk25</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <maven.compiler.source>25</maven.compiler.source>
+                <maven.compiler.target>25</maven.compiler.target>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>3.1.2</version>
+                        <configuration>
+                            <useModulePath>false</useModulePath>
+                            <argLine>${argLine} -Dnet.bytebuddy.experimental=true</argLine>
+                            <!-- If provided, use the specified java executable to fork the test JVM. Example:
+                                 mvn -P jdk25 -Djdk25.forkedProcessExecutable="C:\\Program Files\\Java\\jdk-25\\bin\\java.exe" -Dtest=... test -->
+                            <forkedProcessExecutable>${jdk25.forkedProcessExecutable}</forkedProcessExecutable>
+                            <!-- If you need to force a specific JDK executable for forked tests,
+                                 you can set <forkedProcessExecutable>...path to java...</forkedProcessExecutable>
+                                 here. We avoid hardcoding the path to keep the pom portable. -->
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Profile to enable actual mail sending (do not activate in CI unless secrets are provided) -->
+        <profile>
+            <id>enable-mail</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <mail.enabled>true</mail.enabled>
+            </properties>
+        </profile>
+    </profiles>
+</project>
