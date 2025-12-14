@@ -188,6 +188,3 @@ java -jar target/your-artifact-name.jar
 **Лабораторна робота №6, Варіант 8*
 
 ---
-
-
-```
